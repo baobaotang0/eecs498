@@ -32,30 +32,44 @@ def ridge_regression(X, y, l):
         xj_avg = np.average(X[:, j])
         X_hat[:, j] -= xj_avg
     beta_1 = np.average(y)
-    y_hat = np.vstack((y, np.zeros((n, 1))))
-    X_hat = np.vstack((X,np.eye(n)*np.sqrt(l)))
+    y_hat = np.vstack((y - 1, np.zeros((n, 1))))
+    X_hat = np.vstack((X, np.eye(n) * np.sqrt(l)))
     beta_ridge = SVD_solver(X_hat, y_hat)
-    return beta_1+beta_ridge
+    return beta_ridge, beta_1
 
 
 def get_X(z, deg):
     return np.array([[(z[i] ** j) for j in range(deg + 1)] for i in range(len(z))])
 
 
-
 if __name__ == '__main__':
     z = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
     y = [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
-    x_show = np.linspace(-5, 5, 1000)
-    # for deg in range(1, 10, 2):
-    X = get_X(z, 4)
-    beta_ridge = ridge_regression(X, y, 10)
-    # print(Cholesky_factorization_solver(X, y))
-    beta_OLS = SVD_solver(X, y)
-
-    p = np.poly1d(beta_ridge.flatten())
+    x_show = np.linspace(-5, 5, 50)
+    for deg in range(2, 10, 2):
+        X = get_X(z, deg)
+        beta_OLS = SVD_solver(X, y)
+        pyplot.plot(x_show, np.poly1d(np.flip(beta_OLS.flatten()))(x_show),"--")
     pyplot.plot(z, y)
-    pyplot.plot(x_show, np.poly1d(beta_ridge.flatten())(x_show))
-    pyplot.plot(x_show, np.poly1d(beta_OLS.flatten())(x_show))
-    pyplot.plot()
+    pyplot.title("beta_OLS")
+    pyplot.legend(["deg="+str(i) for i in range(2, 10, 2)])
     pyplot.show()
+
+    for deg in range(2, 10, 2):
+        X = get_X(z, deg)
+        beta_ridge, beta_1 = ridge_regression(X, y, 10)
+        pyplot.plot(x_show, np.poly1d(np.flip(beta_ridge.flatten()))(x_show) + 1, '--')
+    pyplot.plot(z, y)
+    pyplot.title("beta_ridge_regression(lambda=10)")
+    pyplot.legend(["deg="+str(i) for i in range(2, 10, 2)])
+    pyplot.show()
+
+    for i in range(-1, 6):
+        X = get_X(z, 10)
+        beta_ridge, beta_1 = ridge_regression(X, y, 10**i)
+        pyplot.plot(x_show, np.poly1d(np.flip(beta_ridge.flatten()))(x_show) + 1, '--')
+    pyplot.plot(z, y)
+    pyplot.title("beta_ridge_regression(deg=10)")
+    pyplot.legend(["deg="+str(10**i) for i in range(-1, 6)])
+    pyplot.show()
+
