@@ -17,13 +17,24 @@ y_test = y[400:]
 if __name__ == '__main__':
     from sklearn import linear_model
     # instantiate and train a Lasso model
-    reg = linear_model.Lasso(alpha= 1)
-    reg.fit(X_train, y_train)
-    # use the trained model to predict ytest from Xtest
-    y_my = reg.predict(X_test)
-    MSE = np.linalg.norm(y_test - y_my) ** 2 / len(y_test)
-    print(MSE)
+    alpha_set = [0.5*i for i in range(10)]
+    MSE_set = [0] * len(alpha_set)
+    for i in range(len(alpha_set)):
+        reg = linear_model.Lasso(alpha = alpha_set[i])
+        reg.fit(X_train, y_train)
+        y_my = reg.predict(X_test)
+        MSE_set[i] = np.linalg.norm(y_test - y_my) ** 2 / len(y_test)
+
     from matplotlib import pyplot as plt
-    plt.plot(y_test)
-    plt.plot(y_my)
+    plt.plot(alpha_set,MSE_set)
     plt.show()
+
+    num_theta = 0
+    reg = linear_model.Lasso(alpha=alpha_set[MSE_set.index(min(MSE_set))])
+    reg.fit(X_train, y_train)
+    for i in reg.coef_:
+        if i != 0.0:
+            num_theta += 1
+    print(num_theta)
+
+
