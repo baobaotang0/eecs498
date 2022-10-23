@@ -47,33 +47,64 @@ y_train_whole = np.concatenate((y_train, y_val), axis=0)
 
 ###pb_a
 print("pb2(a)")
-error_list = [0] * len(C_grid)
-for i in range(len(C_grid)):
-    clf = svm.SVC(C=C_grid[i], kernel='poly', degree=1)
-    clf.fit(X_train, y_train)
-    error_list[i] = 1 - clf.score(X_val, y_val)
+for p in [2]:
+    print(f"when p = {p}")
+    error_list = [0] * len(C_grid)
+    for i in range(len(C_grid)):
+        clf = svm.SVC(C=C_grid[i], kernel='poly', degree=p)
+        clf.fit(X_train, y_train)
+        error_list[i] = 1 - clf.score(X_val, y_val)
 
-# Report the best value of C
-plt.title('validation error vs. C')
-plt.xlabel('C')
-plt.ylabel('Validation error')
-# plt.xlim(1e-4, 1e+3)
-# plt.ylim(0, 0.15)
-plt.plot(C_grid, error_list)
-plt.show()
+    # Report the best value of C
+    plt.title(f'validation error vs. C, when p={p}')
+    plt.xlabel('C')
+    plt.ylabel('Validation error')
+    plt.plot(C_grid, error_list)
+    plt.show()
 
-# Best value of C
-Best_C = C_grid[error_list.index(min(error_list))]
-print("Best value of C:", Best_C)
+    # Best value of C
+    Best_C = C_grid[error_list.index(min(error_list))]
+    print(f"Best value of C(degree={p}):", Best_C)
 
-# Retrain the whole dataset with best C
-clf = svm.SVC(C=Best_C, kernel='poly', degree=1)
-clf.fit(X_train_whole, y_train_whole)
+    # Retrain the whole dataset with best C
+    clf = svm.SVC(C=Best_C, kernel='poly', degree=1)
+    clf.fit(X_train_whole, y_train_whole)
 
-# Testing
-Test_error = 1 - clf.score(X_test, y_test)
-print("Test error corresponding to the best C:", Test_error)
-
+    # Test
+    Test_error = 1 - clf.score(X_test, y_test)
+    print(f"Test error corresponding to the best C(degree={p}):{Test_error}")
 
 #Best value of C: 2.154434690031882
 #Test error corresponding to the best C: 0.027499135247319284
+# Best value of C(degree={p}): 10.0
+# Test error corresponding to the best C(degree=2):0.02940159114493257
+
+# ###pb_b
+# print("pb2(b)")
+# error_list = [0] * len(C_grid)
+# for i in range(len(C_grid)):
+#     clf = svm.SVC(C=C_grid[i], kernel='rbf', degree=1)
+#     clf.fit(X_train, y_train)
+#     error_list[i] = 1 - clf.score(X_val, y_val)
+#
+# # Report the best value of C
+# plt.title('validation error vs. C')
+# plt.xlabel('C')
+# plt.ylabel('Validation error')
+# plt.plot(C_grid, error_list)
+# plt.show()
+#
+# # Best value of C
+# Best_C = C_grid[error_list.index(min(error_list))]
+# print("Best value of C:", Best_C)
+#
+# # Retrain the whole dataset with best C
+# clf = svm.SVC(C=Best_C, kernel='poly', degree=1)
+# clf.fit(X_train_whole, y_train_whole)
+#
+# # Test
+# Test_error = 1 - clf.score(X_test, y_test)
+# print("Test error corresponding to the best C:", Test_error)
+#
+# #Best value of C: 2.154434690031882
+# #Test error corresponding to the best C: 0.027499135247319284
