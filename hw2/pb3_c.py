@@ -27,14 +27,24 @@ if __name__ == '__main__':
 
     from matplotlib import pyplot as plt
     plt.plot(alpha_set,MSE_set)
+    plt.xlabel("alpha")
+    plt.ylabel("MSE")
     plt.show()
 
+    plt.plot(y_test)
+    plt.plot(y_my)
+    plt.show()
+
+
     num_theta = 0
-    reg = linear_model.Lasso(alpha=alpha_set[MSE_set.index(min(MSE_set))])
+    alpha = alpha_set[MSE_set.index(min(MSE_set))]
+    reg = linear_model.Lasso(alpha=alpha)
     reg.fit(X_train, y_train)
+    y_my = reg.predict(X_test)
+    MSE = np.linalg.norm(y_test - y_my) ** 2 / len(y_test)
     for i in reg.coef_:
         if i != 0.0:
             num_theta += 1
-    print(num_theta)
+    print(alpha, num_theta, MSE)
 
 
