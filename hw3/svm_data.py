@@ -79,32 +79,46 @@ for p in [2]:
 # Best value of C(degree={p}): 10.0
 # Test error corresponding to the best C(degree=2):0.02940159114493257
 
-# ###pb_b
-# print("pb2(b)")
-# error_list = [0] * len(C_grid)
-# for i in range(len(C_grid)):
-#     clf = svm.SVC(C=C_grid[i], kernel='rbf', degree=1)
-#     clf.fit(X_train, y_train)
-#     error_list[i] = 1 - clf.score(X_val, y_val)
-#
-# # Report the best value of C
-# plt.title('validation error vs. C')
-# plt.xlabel('C')
-# plt.ylabel('Validation error')
-# plt.plot(C_grid, error_list)
-# plt.show()
-#
-# # Best value of C
-# Best_C = C_grid[error_list.index(min(error_list))]
-# print("Best value of C:", Best_C)
-#
-# # Retrain the whole dataset with best C
-# clf = svm.SVC(C=Best_C, kernel='poly', degree=1)
-# clf.fit(X_train_whole, y_train_whole)
-#
-# # Test
-# Test_error = 1 - clf.score(X_test, y_test)
-# print("Test error corresponding to the best C:", Test_error)
-#
-# #Best value of C: 2.154434690031882
-# #Test error corresponding to the best C: 0.027499135247319284
+###pb_b
+print("pb2(b)")
+gamma_grid = np.logspace(-3, 3, 10)
+error_list = np.zeros((len(C_grid), len(gamma_grid)))
+
+# Report the best value of C
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.set_title('validation error vs. C and gamma')
+ax.set_xlabel('C')
+ax.set_ylabel('gamma')
+ax.set_zlabel('Validation error')
+
+for i in range(len(C_grid)):
+    for j in range(len(gamma_grid)):
+        clf = svm.SVC(C=C_grid[i], kernel='rbf', gamma=gamma_grid[j])
+        clf.fit(X_train, y_train)
+        error_list[i, j] = 1 - clf.score(X_val, y_val)
+
+        zdata = error_list[i, j]
+        xdata = C_grid[i]
+        ydata = gamma_grid[j]
+        ax.scatter3D(xdata, ydata, zdata, color='black')
+        print(f"****** training ****** C is {C_grid[i]}; gamma is {gamma_grid[j]}")
+
+plt.show()
+
+# Best value of C and gamma
+min_index = np.where(error_list == np.min(error_list))
+Best_C = C_grid[min_index[0][0]]
+Best_gamma = gamma_grid[min_index[1][0]]
+print(f"Best C is {Best_C}; Best gamma is {Best_gamma}")
+
+# Retrain the whole dataset with best C
+clf = svm.SVC(C=Best_C, kernel='rbf', gamma=Best_gamma)
+clf.fit(X_train_whole, y_train_whole)
+
+# Test
+error = 1 - clf.score(X_test, y_test)
+print("Test error to the best C and gamma:", error)
+
+#Best C is 46.41588833612773; Best gamma is 0.001
+#Test error to the best C and gamma: 0.014700795572466285
