@@ -37,28 +37,20 @@ if __name__ == '__main__':
     error?
     '''
     a = 1
-    m = 1000
+    m = 10000
     n = 1000
     error = [0] * m
-    standard_deviation = [0] * m
-    standard_error = [0] * m
-    Sn_hat = [0] * m
     for j in range(m):
         p = np.random.rand(n, 2) * a
         indicator = np.zeros((n, 1))
         for i in range(n):
             if p[i, 0] ** 2 + p[i, 1] ** 2 <= a ** 2:
                 indicator[i] = 1
-        Sn_hat[j] = np.count_nonzero(indicator) / n * 4
-        error[j] = np.pi-Sn_hat[j]
-        standard_deviation[j] = 4*np.std(indicator)
-        standard_error[j] = standard_deviation[j]/np.sqrt(n)
+        error[j] = np.pi-np.count_nonzero(indicator) / n * 4
+    standard_error = 4*np.std(indicator)/np.sqrt(n)
     hist = plt.hist(error)
     plt.title("error")
     plt.show()
-    plt.hist(standard_error)
-    plt.title("standard_error")
-    plt.show()
-    std_abs_error = np.std(error)
-    std_std_error = 4*np.std(Sn_hat)/np.sqrt(n)
-    print(std_abs_error, std_std_error)
+    std_error = np.std(error)
+    print(std_error, standard_error)
+    #0.052322926639858394 0.05231275179150873
