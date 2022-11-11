@@ -6,8 +6,10 @@ import numpy as np
 # container object used by sklearn)
 boston = load_boston()
 # access the data and targets
+
 X = boston.data
 y = boston.target
+X = preprocessing.scale(X)
 X_train = X[0:400]
 y_train = y[0:400]
 X_test = X[400:]
@@ -25,13 +27,17 @@ def SVD_solver(X, y):
 
 
 def get_X(X):
-    X = preprocessing.scale(X)
+
     return np.hstack((np.ones((X.shape[0], 1)), X))
 
 
 if __name__ == '__main__':
     theta_hat = SVD_solver(X=get_X(X_train), y=y_train)
-    MSE = np.linalg.norm(y_test - get_X(X_test) @ theta_hat) ** 2 / len(y_test)
+    print(theta_hat)
+    theta_hat = np.linalg.pinv(get_X(X_train)) @ y_train
+
+    y_predict = get_X(X_test) @ theta_hat
+    MSE = (np.linalg.norm(y_predict - y_test)**2)/len(y_test) #(np.linalg.norm(y_test - get_X(X_test) @ theta_hat) ** 2) / len(y_test)
     print(MSE)
     from matplotlib import pyplot as plt
     plt.plot(y_test)
