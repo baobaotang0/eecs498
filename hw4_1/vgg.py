@@ -66,43 +66,59 @@ class VGG(nn.Module):
             # you can see an example for the rest of the network. Fill in the
             # ?s.
 
-            #nn.Conv2d(?, ?, kernel_size=?, padding=1),
-            #nn.MaxPool2d(?),
+            nn.Conv2d(3, 8, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
             
             # Stage 2
             # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
             # TODO: max-pooling layer, size 2
-            
+
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
 
             # Stage 3
             # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
             # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
             # TODO: max-pooling layer, size 2
-            
-            
+
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
+
             # Stage 4
             # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-            
+
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
 
             # Stage 5
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-        
+
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.MaxPool2d(2),
+
         
         )
         self.fc = nn.Sequential(
             # TODO: fully-connected layer (64->64)
-            
+
+            nn.Linear(64, 64),
             # TODO: ReLU
-            
+
+            nn.ReLU(),
+
             # here you can try adding more fully-connected layers followed by
             # ReLU, if you want.
             
             # TODO: fully-connected layer (64->10)
 
+            nn.Linear(64, 10)
             # the softmax will be part of the cross entropy loss (defined
             # in main()) so we just need to have a linear layer with output size
             # equal to the number of classes (10). This is what is accomplished
@@ -162,7 +178,7 @@ def test(testloader, net, device):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     print('Accuracy of the network on the 10000 test images: %d %%' % (
-        100 * correct / total))
+        100 * correct / total))   # 68%
 
 
 def main():
