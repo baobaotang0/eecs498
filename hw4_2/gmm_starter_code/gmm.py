@@ -56,7 +56,7 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
     zk = np.zeros(
         [N, num_K]
     )  # Matrix containing cluster membership probability for each point
-
+    log_likelihood = np.zeros((num_iter,1))
     if plot:
         plt.ion()
         fig = plt.figure()
@@ -88,7 +88,10 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
         k according to current values of si2, pk and mu
         """
         # TODO: Implement the E-step
-
+        for i in range(num_K):
+            zk[:, i] = pk[i] * multivariate_normal.pdf(trainX, mean=mu[i], cov=si2)
+        log_likelihood[iter] = np.sum(np.log(np.sum(zk, axis=1)))
+        zk /= zk.sum(axis=1, keepdims=True)
         """
         M-step
         Compute the GMM parameters from the expressions which you have in the spec
@@ -96,19 +99,35 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
 
         # Estimate new value of pk
         # TODO
+        sum_z = zk.sum(axis=0)
+        pk = sum_z / N
 
         # Estimate new value for means
         # TODO
+        mu = np.matmul(zk.T, trainX) / sum_z[:, None]
 
         # Estimate new value for sigma^2
         # TODO
+        si2 = 0
+        for i in range(N):
+            for k in range(num_K):
+                si2 += zk[i, k]*(trainX[i, :]-mu[k]).T @ (trainX[i, :]-mu[k])
+        si2 = si2 / N / D
 
     if plot:
         plt.ioff()
         plt.savefig('visualize_clusters.png')
     # Computing the expected log-likelihood of data for the optimal parameters computed
     # TODO
+    ll = []
+    for d in trainX:
+        tot = 0
+        for i in range(num_K):
+            tot += pk[i] * multivariate_normal.pdf(d, mean=mu[i], cov=si2)
+        ll.append(np.log(tot))
+    print("the expected log-likelihood of data for the optimal parameters computed", np.sum(ll))
     # Compute the BIC for the current clustering
-    BIC = None  # TODO: calculate BIC
+    print(np.log(N), 2 * log_likelihood.max(), 2*np.sum(ll))
+    BIC = (num_K+num_K*D) * np.log(N) - 2 * np.sum(ll) # TODO: calculate BIC
 
     return mu, pk, zk, si2, BIC
