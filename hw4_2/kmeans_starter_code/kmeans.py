@@ -17,13 +17,14 @@ def visualize_kmeans(data, n_clusters, init):
     # - Set argument n_clusters (number of clusters) to n_clusters
     # - Set argument init ('random' or 'k-means++') to init
     # - Set random_state to 20
-    kmeans = None
+    kmeans = KMeans(n_clusters=n_clusters, init=init, random_state=20)
+
 
     # Fit data to obtain clusters
     kmeans.fit(data)
 
     # TODO: print final value of objective function ("inertia_") 
-
+    print("final value of objective function (inertia_)  is", kmeans.inertia_)
 
     # Plot each cluster on the same axes
     plt.figure()
