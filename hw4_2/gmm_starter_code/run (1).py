@@ -44,27 +44,28 @@ def main():
     trainX = get_data()
     num_K = range(2, 9)  # List of cluster sizes
     BIC_K = np.zeros(len(num_K))
-
-
     for idx in range(len(num_K)):
         # Running
         k = num_K[idx]
         print("%d clusters..." % k)
         # TODO: Run gmm function 10 times and get the best set of parameters
         # for this particular value of k. Use the default num_iter=10 in calling gmm()
+        
+        BIC_min = 1e10
         for i in range(10):
             _, _, _, _, BIC = gmm(trainX, k, num_iter=10, plot=False)
-            if BIC_K[idx] == 0 or BIC < BIC_K[idx]:
-                BIC_K[idx] = BIC
+            if BIC < BIC_min:
+                BIC_min = BIC
+            
+        BIC_K[idx] = BIC_min
 
     # TODO: Part d: Make a plot to show BIC as function of clusters K
-    plt.clf()
     plt.plot(num_K, BIC_K)
-    plt.xlabel("num of clusters")
-    plt.ylabel("BIC")
-    plt.title("Bayesian Information Criteria (BIC) VS the number of clusters K")
-    plt.savefig(f"BIC_K.png")
+    plt.xlabel('The number of clusters K')
+    plt.ylabel('BIC')
     plt.show()
+    plt.savefig("bic_plot.png")
+
 
 if __name__ == "__main__":
     main()
