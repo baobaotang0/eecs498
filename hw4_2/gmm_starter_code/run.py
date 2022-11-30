@@ -5,6 +5,7 @@ Script for running GMM soft clustering
 import matplotlib.pyplot as plt
 import numpy as np
 import string as s
+from scipy.stats import multivariate_normal
 
 from sklearn.datasets import fetch_openml
 
@@ -44,6 +45,14 @@ def main():
     trainX = get_data()
     num_K = range(2, 9)  # List of cluster sizes
     BIC_K = np.zeros(len(num_K))
+
+    xVals = trainX[:, 0]
+    yVals = trainX[:, 1]
+    x = np.linspace(np.min(xVals), np.max(xVals), 500)
+    y = np.linspace(np.min(yVals), np.max(yVals), 500)
+    X, Y = np.meshgrid(x, y)
+    pos = np.array([X.flatten(), Y.flatten()]).T
+
     for idx in range(len(num_K)):
         # Running
         k = num_K[idx]
@@ -51,10 +60,24 @@ def main():
         # TODO: Run gmm function 10 times and get the best set of parameters
         # for this particular value of k. Use the default num_iter=10 in calling gmm()
         for i in range(10):
-            pass
+            mu, pk, zk, si2, BIC = gmm(trainX[:, :2], k, num_iter=30, plot=False)
+            if BIC_K[idx] == 0 or BIC < BIC_K[idx]:
+                BIC_K[idx] = BIC
+                best_mu, best_si2 = mu, si2
 
     # TODO: Part d: Make a plot to show BIC as function of clusters K
-    plt.savefig("bic_plot.png")
+
+        plt.clf()
+        plt.scatter(xVals, yVals, color="black")
+        pdfs = []
+        for i in range(k):
+            rv = multivariate_normal(best_mu[i], best_si2)
+            plt.plot(best_mu[i][0], best_mu[i][1], "*r")
+            pdfs.append(rv.pdf(pos).reshape(500, 500))
+        pdfs = np.array(pdfs)
+        plt.contourf(X, Y, np.max(pdfs, axis=0), alpha=0.8)
+
+        plt.savefig(f"bic_plot_{k}.png")
 
 
 if __name__ == "__main__":

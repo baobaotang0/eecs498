@@ -73,7 +73,8 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
             plt.scatter(xVals, yVals, color="black")
             pdfs = []
             for k in range(num_K):
-                rv = multivariate_normal(mu[k], si2)
+                # rv = multivariate_normal(mu[k], si2)
+                rv = multivariate_normal(mu[k], si2 * np.eye(D))
                 pdfs.append(rv.pdf(pos).reshape(500, 500))
             pdfs = np.array(pdfs)
             plt.contourf(X, Y, np.max(pdfs, axis=0), alpha=0.8)
@@ -88,9 +89,15 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
         k according to current values of si2, pk and mu
         """
         # TODO: Implement the E-step
-        for i in range(num_K):
-            zk[:, i] = pk[i] * multivariate_normal.pdf(trainX, mean=mu[i], cov=si2)
-        zk /= zk.sum(axis=1, keepdims=True)
+
+        g_sum = np.zeros(N)
+        for i in range(N):
+            for j in range(num_K):
+                g_sum[i] += pk[j] * np.exp(calc_logpdf(trainX[i, :], mu[j, :], si2 * np.eye(D)))
+        for k in range(N):
+            for l in range(num_K):
+                zk[k, l] = pk[l] * np.exp(calc_logpdf(trainX[k, :], mu[l, :], si2 * np.eye(D))) / g_sum[k]
+        
         """
         M-step
         Compute the GMM parameters from the expressions which you have in the spec
@@ -98,33 +105,41 @@ def gmm(trainX, num_K, num_iter=10, plot=False):
 
         # Estimate new value of pk
         # TODO
-        sum_z = zk.sum(axis=0)
-        pk = sum_z / N
+        pk = ((1/N) * np.sum(zk, axis=0))
 
         # Estimate new value for means
         # TODO
-        mu = np.matmul(zk.T, trainX) / sum_z[:, None]
-
+        for i in range(num_K):
+            sum_k = 0
+            for j in range(N):
+                sum_k += zk[j, i] * trainX[j, :]
+            mu[i, :] = (sum_k / pk[i]) * (1/N) 
+        
         # Estimate new value for sigma^2
         # TODO
-        si2 = 0
-        for i in range(N):
-            for k in range(num_K):
-                si2 += zk[i, k] * (trainX[i, :] - mu[k]).T @ (trainX[i, :] - mu[k])
-        si2 = si2 / N / D
+        si2_sum = 0
+        for m in range(N):
+            for n in range(num_K):
+                si2_sum += zk[m, n] * (trainX[m, :] - mu[n, :]).reshape(1,-1) @ (trainX[m, :] - mu[n, :]).reshape(-1,1)
+
+        si2 = (1/(N * D)) * si2_sum
 
     if plot:
         plt.ioff()
         plt.savefig('visualize_clusters.png')
     # Computing the expected log-likelihood of data for the optimal parameters computed
     # TODO
-    ll = []
-    for d in trainX:
-        tot = 0
-        for i in range(num_K):
-            tot += pk[i] * multivariate_normal.pdf(d, mean=mu[i], cov=si2)
-        ll.append(np.log(tot))
+    
+    loglike = 0
+
+    for i in range(N):
+        Q = 0
+        for j in range(num_K):
+            Q += pk[j] * np.exp((calc_logpdf(trainX[i,:], mu[j,:], si2 * np.eye(D))))
+        loglike += np.log(Q)
+                                            
+    print("expected log-likelihood:", loglike)
     # Compute the BIC for the current clustering
-    BIC = (num_K + num_K * D) * np.log(N) - 2 * np.sum(ll)  # TODO: calculate BIC
+    BIC = (num_K + num_K * D) * np.log(N) - 2 * loglike # TODO: calculate BIC
 
     return mu, pk, zk, si2, BIC
