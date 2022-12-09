@@ -2,11 +2,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import spatial, stats
 
-A = [[1, 2],[3, 4]]
+A = [[1, 2], [3, 4]]
 b = [5, 6]
 y = [4.786737690957183, 6.631541228821935]
 
-surface_resolution = 50  # Resolution of the surface to plot
+surface_resolution = 200  # Resolution of the surface to plot
 # lets create a grid of our two parameters
 x1s = np.linspace(-3, 3, num=surface_resolution)
 x2s = np.linspace(-3, 3, num=surface_resolution)
@@ -23,6 +23,9 @@ for i in range(surface_resolution):
             mean=mu_a, cov=sigma_a)
 
 con1 = plt.contourf(x1s, x2s, post_a)
+plt.xlabel("theta1")
+plt.xlabel("theta2")
+plt.title("the posterior PDF using  analytical solution.")
 plt.axis('equal')
 plt.show()
 
@@ -43,5 +46,10 @@ for i in range(surface_resolution):
 
 unnormalized_posterior = prior * likelihood
 posterior = unnormalized_posterior / np.nan_to_num(unnormalized_posterior).sum()
+
 con1 = plt.contourf(x1s, x2s, posterior)
+plt.xlabel("theta1")
+plt.xlabel("theta2")
+plt.title("the posterior PDF using the “brute force” gridding method.")
+plt.axis('equal')
 plt.show()
