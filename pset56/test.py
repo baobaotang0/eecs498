@@ -14,31 +14,57 @@ def G(theta, d):
     return theta ** 3 * d ** 2 + theta * np.exp(-np.abs(0.2 - d))
 
 
-def utility(d, thetas, noises, sigma):
-    n_sample = len(thetas)
-    Gs = G(thetas, d)
-    # print("Gs.shape",Gs.shape)
-    ys = Gs + sigma * noises
-    # print("ys", ys.shape, self.noise_loc, sigma , self.noise_r_s)
-    loglikelis = norm_logpdf(ys, Gs, sigma)
-    evids = np.array([np.mean(norm_pdf(ys[i:i + 1], Gs, sigma)) for i in range(n_sample)])
+def utility(d, theta_i, theta_ij, noises, sigma):
+    n_sample = len(theta_i)
+    G_i = G(theta_i, d)
+    G_ij = G(theta_ij, d)
+    ys = G_i + sigma * noises
+    loglikelis = norm_logpdf(ys, G_i, sigma)
+    # plt.plot(loglikelis)
+    evids = np.array([np.mean(norm_pdf(ys[i:i + 1], G_ij, sigma)) for i in range(n_sample)])
     return np.mean(loglikelis - np.log(evids))
 
+if __name__ == '__main__':
+    num_d = 30
+    sigma = 0.01
+    N1, N2 = 200, 200
 
-noise_base_scale = 0.01
+    d_set = np.linspace(0, 1, num_d)
 
-ds = np.linspace(0, 1, 21)
-Us = []
-thetas = np.random.uniform(size=(1000, 1))
-noises = np.random.normal(size=(1000, 1))
-for d in ds:
-    Us.append(utility(d, thetas, noises, noise_base_scale))
+    Us = []
+    theta_i = np.random.uniform(size=(N1, 1))
+    theta_ij = np.random.uniform(size=(N2, 1))
+    noises = np.random.normal(size=(N1, 1))
+    for d in d_set:
+        Us.append(utility(d, theta_i, theta_ij, noises, sigma))
 
-plt.figure(figsize=(6, 4))
-plt.plot(ds, Us)
-plt.xlabel('d', fontsize=20)
-plt.ylabel('U(d)', fontsize=20)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-plt.grid(ls='--')
-plt.show()
+    y = np.zeros((N1, num_d))
+    U = np.zeros((num_d,))
+    noise = np.random.normal(size=(N1, 1))*sigma
+
+    for k, d in enumerate(d_set):
+        # teX = np.concatenate((theta_i, np.ones((N1, 1))*d), axis=1)
+        # y[:, k] = model.predict(teX).flatten() + noise[:, k]
+        G_i = G(theta_i, d)
+        G_ij = G(theta_ij, d)
+        y[:, k] = G_i + noise
+        log_likelihood = norm_logpdf(y[:, k].reshape((N1,1)), G_i, sigma)
+        evidence = np.array([np.mean(norm_pdf(y[i, k], G_ij, sigma)) for i in range(N1)])
+        U[k] = np.mean(log_likelihood - np.log(evidence))
+
+    # plt.plot(log_likelihood)
+    # plt.show()
+
+    plt.plot(d_set, U)
+    plt.show()
+    #
+    # plt.figure(figsize=(6, 4))
+    # plt.plot(d_set, Us)
+    # plt.xlabel('d', fontsize=20)
+    # plt.ylabel('U(d)', fontsize=20)
+    # plt.xticks(fontsize=15)
+    # plt.yticks(fontsize=15)
+    # plt.grid(ls='--')
+    # plt.show()
+
+
