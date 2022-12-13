@@ -45,53 +45,52 @@ def plot_fashion_MINIST():
     plt.show()
 
 
-if __name__ == '__main__':
+def get_model_name(model):
+    class_name = str(type(model))
+    start, end = None, None
+    for i in range(len(class_name)-1,-1,-1):
+        letter = class_name[i]
+        if end is None and (letter.isalpha() or letter == "_"):
+            end = i
+        if letter == ".":
+            start = i+1
+            return class_name[start:end+1]
 
+
+class NN_with_reduced_dim:
+    def __init__(self, rd_model, X, y):
+        t_start = time()
+        self.rd_model = rd_model
+        self.rd_X = self.rd_model.fit_transform(X)
+        self.rd_time = time() - t_start
+        self.dim = self.rd_model.get_params()['n_components']
+        self.rd_model_name = get_model_name(self.rd_model)
+        self.labels = y
+
+    def plot_reduce_dim(self):
+        if self.rd_model_name == "PCA":
+            plot_embedding(self.rd_X[:, 0:dim], self.labels, self.rd_model_name)
+        else:
+            plot_embedding(self.rd_X, self.labels, self.rd_model_name)
+
+if __name__ == '__main__':
     fashion_data = keras.datasets.fashion_mnist.load_data()
     (X_train, y_train), (X_test, y_test) = fashion_data
-    X = X_test.reshape((10000, 28 * 28))
-    y = y_test
+    X = X_test.reshape((10000, 28 * 28))[:100, :]
+    y = y_test[:100]
 
     plt.set_cmap('gist_rainbow')
-    rd_time = []
+    res = {2:{},3:{}}
     plot_flag = False
-    for line, dim in [0, 2], [1, 3]:
-        rd_time.append([])
-        for model in [PCA(n_components=dim), ]
-            t_start = time()
-            my_pca = PCA(n_components=dim)
-            X_pca = my_pca.fit_transform(X)
-            # plot_embedding(X_pca[:, 0:dim], y, 'PCA')
-            rd_time[line].append(time() - t_start)
+    for dim in [2, 3]:
+        for model in [PCA(n_components=dim),
+                      manifold.Isomap(n_components=dim),
+                      manifold.TSNE(n_components=dim),
+                      manifold.LocallyLinearEmbedding(n_neighbors=30, n_components=dim, method="standard"),
+                      manifold.SpectralEmbedding(n_components=dim, random_state=0, eigen_solver="arpack")
+                      ]:
+            res[dim][get_model_name(model)] = NN_with_reduced_dim(model, X,y)
+            if plot_flag:
+                res[-1][-1].plot_reduce_dim()
 
-        t_start = time()
-        my_MDS = manifold.MDS(n_components=dim, n_init=1, max_iter=100)
-        X_mds = my_MDS.fit_transform(X)
-        rd_time[line].append(time() - t_start)
-        # plot_embedding(X_mds, y, 'MDS')
-
-        t_start = time()
-        my_iso = manifold.Isomap(n_components=dim)
-        X_iso = my_iso.fit_transform(X)
-        rd_time[line].append(time() - t_start)
-        # plot_embedding(X_iso, y, 'Isomap')
-
-        t_start = time()
-        my_tsne = manifold.TSNE(n_components=dim)
-        X_tsne = my_tsne.fit_transform(X)
-        rd_time[line].append(time() - t_start)
-        # plot_embedding(X_tsne, y, 't sne')
-
-        t_start = time()
-        my_lle = manifold.LocallyLinearEmbedding(n_neighbors=30, n_components=dim, method="standard")
-        X_lle = my_lle.fit_transform(X)
-        rd_time[line].append(time() - t_start)
-        # plot_embedding(X_lle, y, 'LLE')
-
-        t_start = time()
-        my_le = manifold.SpectralEmbedding(n_components=dim, random_state=0, eigen_solver="arpack")
-        X_le = my_le.fit_transform(X)
-        rd_time[line].append(time() - t_start)
-        # plot_embedding(X_le, y, 'Laplacian Eigenmaps')
-
-    print(rd_time)
+    print(res)
