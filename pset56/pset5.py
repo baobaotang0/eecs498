@@ -36,7 +36,7 @@ class Surrogate_NN_Model():
     def get_nn(self):
         self.model = keras.Sequential([
             keras.layers.Dense(32, activation=tf.nn.relu, input_shape=[2]),
-            keras.layers.Dense(16, activation=tf.nn.softmax),
+            keras.layers.Dense(64, activation=tf.nn.softmax),
             keras.layers.Dense(1)])
         self.model.compile(optimizer="Adam", loss="mse", metrics=["mae"])
         early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
