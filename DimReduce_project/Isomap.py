@@ -6,6 +6,10 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from sklearn import manifold, metrics
 from sklearn.decomposition import PCA
 
+FASHION_CLASS = ['0: T-shirt/top', '1: Trouser', '2: Pullover', '3: Dress', '4: Coat', '5: Sandal',
+                 '6: Shirt', '7: Sneaker', '8: Bag', '9: Ankle boot']
+
+
 def plot_embedding(X, y, t, plot=True):
     plt.clf()
     fig = plt.figure()
@@ -20,75 +24,74 @@ def plot_embedding(X, y, t, plot=True):
     else:
         return
     ax.set_title(t)
-    fig.colorbar(p).ax.set_yticklabels(['0: T-shirt/top', '1: Trouser', '2: Pullover', '3: Dress', '4: Coat', '5: Sandal',
-                                       '6: Shirt', '7: Sneaker', '8: Bag', '9: Ankle boot'])
+    fig.colorbar(p).ax.set_yticklabels(FASHION_CLASS)
     plt.savefig(f"{t}_{dim}D.png")
     if plot:
         plt.show()
 
 
-fashion_data = keras.datasets.fashion_mnist.load_data()
-(X_train, y_train), (X_test, y_test) = fashion_data
-X = X_test.reshape((10000, 28*28))[:1000,:]
-y = y_test[:1000]
+def plot_fashion_MINIST():
+    fig = plt.figure()
+    j = 0
+    i = 0
+    while i < 10:
+        if y_train[j] == i:
+            ax = fig.add_subplot(4, 3, 1 + i)
+            ax.imshow(X_train[j])
+            ax.set_title(FASHION_CLASS[y_train[j]])
+            ax.get_xaxis().set_visible(False)
+            i += 1
+        j += 1
+    plt.show()
 
 
-# plot fashion MINIST
-# fashion_cla = ['0: T-shirt/top', '1: Trouser', '2: Pullover', '3: Dress', '4: Coat', '5: Sandal',
-#                                        '6: Shirt', '7: Sneaker', '8: Bag', '9: Ankle boot']
-# fig = plt.figure()
-# j = 0
-# i = 0
-# while i < 10:
-#     if y_train[j] == i:
-#         ax = fig.add_subplot(4, 3, 1+i)
-#         ax.imshow(X_train[j])
-#         ax.set_title(fashion_cla[y_train[j]])
-#         ax.get_xaxis().set_visible(False)
-#         i += 1
-#     j += 1
-# plt.show()
+if __name__ == '__main__':
 
-plt.set_cmap('gist_rainbow')
-dim = 3
+    fashion_data = keras.datasets.fashion_mnist.load_data()
+    (X_train, y_train), (X_test, y_test) = fashion_data
+    X = X_test.reshape((10000, 28 * 28))
+    y = y_test
 
-my_pca = PCA(n_components=dim)
-X_pca = my_pca.fit_transform(X)
-X_pca_back = my_pca.inverse_transform(X_pca)
-pca_loss = np.linalg.norm(X - X_pca_back)
-print(dim, "pca loss", pca_loss)
-# plot_embedding(X_pca[:, 0:dim], y, 'PCA')
+    plt.set_cmap('gist_rainbow')
+    rd_time = []
+    plot_flag = False
+    for line, dim in [0, 2], [1, 3]:
+        rd_time.append([])
+        for model in [PCA(n_components=dim), ]
+            t_start = time()
+            my_pca = PCA(n_components=dim)
+            X_pca = my_pca.fit_transform(X)
+            # plot_embedding(X_pca[:, 0:dim], y, 'PCA')
+            rd_time[line].append(time() - t_start)
 
-# my_MDS = manifold.MDS(n_components=dim, n_init=1, max_iter=100)
-# X_mds = my_MDS.fit_transform(X)
-# c = keras.metrics.MeanRelativeError(X_mds)
-# Deuclidean = metrics.pairwise.pairwise_distances(X_mds, metric='euclidean')
-# print(Deuclidean.shape)
-# print(my_MDS.stress_, X_mds.shape,my_MDS.embedding_.shape,my_MDS.get_params(),)
-# # mds_loss = my_MDS.stress_
-# print(dim, "mds loss", mds_loss)
-# plot_embedding(X_mds, y, 'MDS')
-#
+        t_start = time()
+        my_MDS = manifold.MDS(n_components=dim, n_init=1, max_iter=100)
+        X_mds = my_MDS.fit_transform(X)
+        rd_time[line].append(time() - t_start)
+        # plot_embedding(X_mds, y, 'MDS')
 
-my_iso = manifold.Isomap(n_components=dim)
-X_iso = my_iso.fit_transform(X)
-iso_loss = my_iso.reconstruction_error()
-print(dim, "iso loss", iso_loss)
-# plot_embedding(X_iso, y, 'Isomap')
+        t_start = time()
+        my_iso = manifold.Isomap(n_components=dim)
+        X_iso = my_iso.fit_transform(X)
+        rd_time[line].append(time() - t_start)
+        # plot_embedding(X_iso, y, 'Isomap')
 
-# my_tsne = manifold.TSNE(n_components=dim)
-# X_tsne = my_tsne.fit_transform(X)
-# plot_embedding(X_tsne, y, 't sne')
-#
-#
-my_lle = manifold.LocallyLinearEmbedding(n_neighbors=30, n_components=dim, method="standard")
-X_lle = my_lle.fit_transform(X)
-lle_loss = my_lle.reconstruction_error_
-print(dim, "lle loss", lle_loss)
-# plot_embedding(X_lle, y, 'LLE')
-#
-#
-my_le = manifold.SpectralEmbedding(n_components=dim, random_state=0, eigen_solver="arpack")
-X_le = my_le.fit_transform(X)
-# plot_embedding(X_le, y, 'Laplacian Eigenmaps')
+        t_start = time()
+        my_tsne = manifold.TSNE(n_components=dim)
+        X_tsne = my_tsne.fit_transform(X)
+        rd_time[line].append(time() - t_start)
+        # plot_embedding(X_tsne, y, 't sne')
 
+        t_start = time()
+        my_lle = manifold.LocallyLinearEmbedding(n_neighbors=30, n_components=dim, method="standard")
+        X_lle = my_lle.fit_transform(X)
+        rd_time[line].append(time() - t_start)
+        # plot_embedding(X_lle, y, 'LLE')
+
+        t_start = time()
+        my_le = manifold.SpectralEmbedding(n_components=dim, random_state=0, eigen_solver="arpack")
+        X_le = my_le.fit_transform(X)
+        rd_time[line].append(time() - t_start)
+        # plot_embedding(X_le, y, 'Laplacian Eigenmaps')
+
+    print(rd_time)
