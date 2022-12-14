@@ -42,15 +42,15 @@ if __name__ == '__main__':
     ax_te_t.set_title("duration of predicting")
     ax_tr_acc.set_title("accuracy of training")
     ax_te_acc.set_title("accuracy of testing")
-    ax_tr_acc.set_ylabel("reduced dimension")
-    ax_te_acc.set_ylabel("reduced dimension")
-    ax_tr_t.set_ylabel("reduced dimension")
-    ax_te_t.set_ylabel("reduced dimension")
+    ax_tr_acc.set_xlabel("reduced dimension")
+    ax_te_acc.set_xlabel("reduced dimension")
+    ax_tr_t.set_xlabel("reduced dimension")
+    ax_te_t.set_xlabel("reduced dimension")
     for filename in os.listdir(os.getcwd()):
              if filename.endswith("npy"):
                 print(filename)
                 model_name = get_model_name_from_filename(filename)
-                if "acc" in filename:
+                if "_acc" in filename:
                     with open(filename, 'rb') as f:
                         a = np.load(f)
                     ax_tr_acc.plot(a[:, 0], a[:, 1], label=model_name)
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     ax_tr_acc.legend()
     ax_te_acc.legend()
-    ax_te_t.legend()
+    ax_tr_t.legend()
     ax_te_t.legend()
 
     plt.show()
