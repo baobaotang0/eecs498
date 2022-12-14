@@ -4,6 +4,7 @@ from tensorflow import keras
 import tensorflow as tf
 from keras.datasets import fashion_mnist
 import numpy as np
+from Utils import reduce_dim_and_nn
 import matplotlib.pyplot as plt
 
 ENCODING_DIM_INPUT = 784
@@ -31,38 +32,36 @@ def train(x_train, dim, epoch=50):
     autoencoder.compile(optimizer='adam', loss='mse')
 
     # training
-    autoencoder.fit(x_train, x_train, epochs=epoch, batch_size=BATCH_SIZE, shuffle=True, callbacks=None)
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=20)
+    autoencoder.fit(x_train, x_train, epochs=epoch, batch_size=BATCH_SIZE, shuffle=True, callbacks=[early_stop])
 
     return encoder, autoencoder
 
 
 if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
-    x_train = x_train.astype('float32') / 255.
-    x_test = x_test.astype('float32') / 255.
-    x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
-    x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
-    dim = 2
+    (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+    X_train = X_train.astype('float32') / 255.
+    X_test = X_test.astype('float32') / 255.
+    X_train = X_train.reshape((len(X_train), np.prod(X_train.shape[1:])))
+    X_test = X_test.reshape((len(X_test), np.prod(X_test.shape[1:])))
 
-    encoder, autoencoder = train(x_train=x_train, dim=2)
-    encode_images = encoder.predict(x_train)
+    test_dim = np.array([2, 3, 5] + [10 * i for i in range(1, 11)])
 
-
-    nn_model = keras.Sequential([
-        keras.layers.Dense(32, activation=tf.nn.relu, input_shape=[dim]),
-        keras.layers.Dense(16, activation=tf.nn.softmax),
-        keras.layers.Dense(10)])
-    nn_model.compile(optimizer='adam',
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                          metrics=['accuracy'])
-    # early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-    nn_model.fit(encode_images, y_train, epochs=10, validation_split=0.2, verbose=0)
-
-    nn_train_acc = nn_model.history.history["accuracy"][-1]
-    nn_epoch = len(nn_model.history.history["accuracy"])
-    print("epoch = ", nn_epoch, "accuracy = ", nn_train_acc)
-
-    nn_test_loss, nn_test_acc = nn_model.evaluate(encoder.predict(x_test), y_test, verbose=2)
-    print("test accuracy = ", nn_test_acc)
-
+    model_names = ["autoencoder"]
+    for model_name in model_names:
+        duration = np.zeros((len(test_dim), 3))
+        duration[:, 0] = test_dim
+        accuracy = np.zeros((len(test_dim), 3))
+        accuracy[:, 0] = test_dim
+        for idx, dim in enumerate(test_dim):
+            print("dim = ", dim, "; model = ", model_name)
+            encoder, autoencoder = train(x_train=X_train, dim=dim)
+            train_time, test_time, nn_train_acc, nn_test_acc = reduce_dim_and_nn(encoder.predict, dim,
+                                                                                 X_train, y_train, X_test, y_test)
+            duration[idx, 1], duration[idx, 2] = train_time, test_time
+            accuracy[idx, 1], accuracy[idx, 2] = nn_train_acc, nn_test_acc
+        with open(model_name+'_t.npy', 'wb') as f:
+            np.save(f, duration)
+        with open(model_name+'_acc.npy', 'wb') as f:
+            np.save(f, accuracy)
 
