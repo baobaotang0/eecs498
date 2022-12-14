@@ -1,55 +1,68 @@
 from keras.layers import Input, Dense
 from keras.models import Model
-from keras.datasets import mnist
+from tensorflow import keras
+import tensorflow as tf
+from keras.datasets import fashion_mnist
 import numpy as np
 import matplotlib.pyplot as plt
 
-(x_train, _), (x_test, _) = mnist.load_data()
-x_train = x_train.astype('float32') / 255.
-x_test = x_test.astype('float32') / 255.
-x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
-x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
-print(x_train.shape)
-print(x_test.shape)
+ENCODING_DIM_INPUT = 784
+BATCH_SIZE = 64
 
-# 单层自编码器
-encoding_dim = 32
-input_img = Input(shape=(784,))
+def train(x_train, dim, epoch=50):
+    """
+    build autoencoder.
+    :param x_train:  the train data
+    :return: encoder and decoder
+    """
+    # input placeholder
+    input_image = Input(shape=(ENCODING_DIM_INPUT, ))
 
-encoded = Dense(encoding_dim, activation='relu')(input_img)
-decoded = Dense(784, activation='sigmoid')(encoded)
+    # encoding layer
+    hidden_layer = Dense(dim, activation='relu')(input_image)
+    # decoding layer
+    decode_output = Dense(ENCODING_DIM_INPUT, activation='relu')(hidden_layer)
 
-autoencoder = Model(inputs=input_img, outputs=decoded)
-encoder = Model(inputs=input_img, outputs=encoded)
+    # build autoencoder, encoder, decoder
+    autoencoder = Model(inputs=input_image, outputs=decode_output)
+    encoder = Model(inputs=input_image, outputs=hidden_layer)
 
-encoded_input = Input(shape=(encoding_dim,))
-decoder_layer = autoencoder.layers[-1]
+    # compile autoencoder
+    autoencoder.compile(optimizer='adam', loss='mse')
 
-decoder = Model(inputs=encoded_input, outputs=decoder_layer(encoded_input))
+    # training
+    autoencoder.fit(x_train, x_train, epochs=epoch, batch_size=BATCH_SIZE, shuffle=True, callbacks=None)
 
-autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+    return encoder, autoencoder
 
-autoencoder.fit(x_train, x_train, epochs=50, batch_size=256,
-                shuffle=True, validation_data=(x_test, x_test))
 
-encoded_imgs = encoder.predict(x_test)
-decoded_imgs = decoder.predict(encoded_imgs)
+if __name__ == '__main__':
+    (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+    x_train = x_train.astype('float32') / 255.
+    x_test = x_test.astype('float32') / 255.
+    x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
+    x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
+    dim = 2
 
-# 输出图像
-n = 10  # how many digits we will display
-plt.figure(figsize=(20, 4))
-for i in range(n):
-    ax = plt.subplot(2, n, i + 1)
-    plt.imshow(x_test[i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+    encoder, autoencoder = train(x_train=x_train, dim=2)
+    encode_images = encoder.predict(x_train)
 
-    ax = plt.subplot(2, n, i + 1 + n)
-    plt.imshow(decoded_imgs[i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
 
-plt.show()
+    nn_model = keras.Sequential([
+        keras.layers.Dense(32, activation=tf.nn.relu, input_shape=[dim]),
+        keras.layers.Dense(16, activation=tf.nn.softmax),
+        keras.layers.Dense(10)])
+    nn_model.compile(optimizer='adam',
+                          loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                          metrics=['accuracy'])
+    # early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+    nn_model.fit(encode_images, y_train, epochs=10, validation_split=0.2, verbose=0)
+
+    nn_train_acc = nn_model.history.history["accuracy"][-1]
+    nn_epoch = len(nn_model.history.history["accuracy"])
+    print("epoch = ", nn_epoch, "accuracy = ", nn_train_acc)
+
+    nn_test_loss, nn_test_acc = nn_model.evaluate(encoder.predict(x_test), y_test, verbose=2)
+    print("test accuracy = ", nn_test_acc)
+
 
